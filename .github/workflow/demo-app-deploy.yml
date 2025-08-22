@@ -3,7 +3,7 @@ name: Juice Shop (Docker service)
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   run-juice:
