@@ -1,0 +1,46 @@
+# docker-compose.yml
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: kiwitcms
+      POSTGRES_PASSWORD: kiwitcms
+      POSTGRES_DB: kiwitcms
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: Europe/Athens
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kiwitcms"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+
+  kiwi:                    # <-- στο ίδιο επίπεδο με το db:
+    image: kiwitcms/kiwi:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"   # HTTP (redirects)
+      - "127.0.0.1:8443:8443"   # HTTPS
+    environment:
+      # Open-source Kiwi: χρησιμοποιούμε ΜΟΝΟ KIWI_DB_* (ΟΧΙ DATABASE_URL)
+      KIWI_DB_ENGINE: django.db.backends.postgresql
+      KIWI_DB_HOST: db
+      KIWI_DB_PORT: "5432"
+      KIWI_DB_NAME: kiwitcms
+      KIWI_DB_USER: kiwitcms
+      KIWI_DB_PASSWORD: kiwitcms
+
+      KIWI_ADMIN_USERNAME: admin
+      KIWI_ADMIN_PASSWORD: admin
+      KIWI_ADMIN_EMAIL: admin@example.com
+
+      KIWI_TIME_ZONE: Europe/Athens
+      TZ: Europe/Athens
+    restart: unless-stopped
+
+volumes:
+  db_data:
