@@ -8,23 +8,27 @@ on:
 jobs:
   run-juice:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       juice:
         image: bkimminich/juice-shop:latest
         ports:
           - 3000:3000
+        # Healthcheck μέσα στο container με Node HTTP GET
         options: >-
-          --health-cmd="wget -qO- http://localhost:3000/ || exit 1"
+          --health-cmd="node -e \"require('http').get('http://localhost:3000',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))\""
           --health-interval=5s
-          --health-timeout=3s
-          --health-retries=30
+          --health-timeout=2s
+          --health-retries=24
+          --start-period=15s
 
     steps:
       - name: Checkout (optional if you have code)
         uses: actions/checkout@v4
 
       - name: Wait until Juice Shop is up
+        shell: bash
         run: |
           for i in {1..60}; do
             if curl -fsS http://localhost:3000/ > /dev/null; then
@@ -34,9 +38,11 @@ jobs:
             echo "⏳ Waiting..."
             sleep 2
           done
-          echo "❌ Timeout while waiting for Juice Shop" && exit 1
+          echo "❌ Timeout while waiting for Juice Shop"
+          echo "---- Docker service logs (juice) ----"
+          docker logs ${{ job.services.juice.id }} || true
+          exit 1
 
-      # demo: σώσε την αρχική σελίδα σαν artifact για επιβεβαίωση
       - name: Save homepage
         run: curl -fsS http://localhost:3000/ -o homepage.html
 
