@@ -24,7 +24,7 @@ jobs:
       - name: Wait until Juice Shop is up
         shell: bash
         run: |
-          for i in {1..120}; do   # ~4 λεπτά max
+          for i in {1..120}; do   # ~4 min max
             if curl -fsS http://localhost:3000/ >/dev/null; then
               echo "✅ Juice Shop is up!"
               exit 0
